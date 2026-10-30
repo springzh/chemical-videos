@@ -46,7 +46,7 @@ document.write(`<script src="${new URLSearchParams(location.search).get('s') || 
 <script>
 // Frame = f(t). Scenes live in scenes.js (SCENE_DEFS[id] with build(g), update(lt, E, beat) and optional
 // en / scale / enter / full); this file is the shared chrome: cover, transitions, scene heading (zh + en),
-// the "一尺镜" scale ruler, progress bar and subtitles. Light lab style; layout in LAY (keep in sync with
+// the optional scale bar, progress bar and subtitles. Light lab style; layout in LAY (keep in sync with
 // scripts/check.py STAGE).
 window.ready = false;
 const Q = new URLSearchParams(location.search), O = Q.get('o') === 'land' ? 'land' : 'port', Z = +(Q.get('z') || 1);
@@ -114,19 +114,17 @@ const heads = scenes.map(s => {
   const box = document.createElement('div'); box.className = 'head';
   Object.assign(box.style, { left: hb.x + 'px', top: hb.y + 'px', width: hb.w + 'px' });
   const zs = Math.min(hb.zh, Math.floor(hb.w / (zh.length * 1.02)));
-  box.innerHTML = `<div class="zh" style="font-size:${zs}px">${[...zh].map(c => `<span>${c}</span>`).join('')}</div>` +
+  box.innerHTML = `<div class="zh" style="font-size:${zs}px">${[...zh].map(c => `<span>${c === ' ' ? '&nbsp;' : c}</span>`).join('')}</div>` +   // inline-block spans drop plain spaces
     (en ? `<div class="en" style="font-size:${hb.en}px">${en}</div>` : '');
   chrome.appendChild(box);
   return { box, s, spans: [...box.querySelectorAll('.zh span')], en: box.querySelector('.en') };
 });
-// "一尺镜" scale ruler: a scene's `scale` is a label ('1 cm') or a list [[at, label], ...] with at = scene seconds or a cue
+// optional scale bar: a scene's `scale` is a label ('1 cm') or a list [[at, label], ...] with at = scene seconds or a cue
 const hud = $('#hud'); hud.setAttribute('width', W); hud.setAttribute('height', H);
 const ru = el('g', {}, hud);
 el('line', { x1: 0, y1: 0, x2: 150, y2: 0, stroke: C.paper, 'stroke-width': 3 }, ru);
 for (let k = 0; k <= 10; k++) el('line', { x1: k * 15, y1: 0, x2: k * 15, y2: k % 5 ? -10 : -18, stroke: C.paper, 'stroke-width': 2 }, ru);
 const ruL = T(ru, '', 150, 46, { size: 40, weight: 800, anchor: 'end' });
-const ruS = T(ru, '一尺镜', 150, 80, { size: 22, weight: 500, anchor: 'end', fill: C.dim });
-ruS.setAttribute('font-size', 22);   // below MIN_FONT on purpose: a tiny caption under the reading
 function scaleAt(s, lt) {
   const sp = s.scale; if (!sp) return null;
   if (typeof sp === 'string') return { label: sp, since: lt + 9 };
@@ -153,7 +151,7 @@ window.render = function (t) {
     const E = k => { if (!(k in sc.ev)) throw new Error(`scene ${sc.id}: no cue "${k}" (cues: ${Object.keys(sc.ev).join(', ')})`); return sc.ev[k] - st; };
     s.update(lt, E, BEAT);
     if (!s.still) s.cam.setAttribute('transform', `translate(500 500) scale(${1 + lt * .0015}) translate(-500 -500)`);
-    // enter: 'fade' (default) rises in; 'zoomIn' grows out of the centre with blur (diving into the lens);
+    // enter: 'fade' (default) rises in; 'zoomIn' grows out of the centre with blur (diving in);
     // 'zoomOut' shrinks in from oversize (pulling back out); 'none' = hard cut, for a scene that continues the
     // previous one's picture (same track, same characters). Leaving: fade under the next scene.
     let tf = '', o = 1, filt = 'none';
