@@ -5,8 +5,8 @@
 // Optional fields on a scene def:
 //   en: 'Meet the racers'      English line under the heading (the heading itself is the scene "title" in script.json)
 //   full: true                 no heading (hook, big moments)
-//   scale: '1 cm' | [[0, '1 cm'], ['放大', '1 μm'], ['一千万倍', '1 nm']]   the 一尺镜 ruler; at = seconds or a cue
-//   enter: 'fade' | 'zoomIn' | 'zoomOut'   zoomIn = diving into the lens, zoomOut = pulling back out
+//   scale: '1 cm' | [[0, '1 cm'], ['放大', '1 μm'], ['一千万倍', '1 nm']]   optional scale bar; at = seconds or a cue
+//   enter: 'fade' | 'zoomIn' | 'zoomOut'   zoomIn = diving in to the molecular scale, zoomOut = pulling back out
 // Rules (references/motion.md in article-video, plus references/style.md here): something lands on the downbeat;
 // every element enters on a cue; something always moves (bob, flow, particles); nothing smaller than MIN_FONT
 // except English glosses. `_cues` is the draft fallback — labelled 草稿布局, never in the final cut.

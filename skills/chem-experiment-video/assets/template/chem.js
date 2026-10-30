@@ -58,7 +58,7 @@ function setColumn(c, s = {}) {
   if (s.solvent != null) { const hh = (c.bedTop - c.top - 26) * clamp(s.solvent); c.sol.setAttribute('y', c.bedTop - hh); c.sol.setAttribute('height', hh); }
   if (s.drip) { const k = clamp(s.drip.k); c.drip.setAttribute('fill', s.drip.col || C.solvent); c.drip.setAttribute('cy', c.tipY + 10 + k * 70); op(c.drip, k > 0 && k < 1 ? 1 - k * .6 : 0); }
   else op(c.drip, 0);
-  if (s.lens) {   // orange "一尺镜" ring snapping onto a spot of the bed
+  if (s.lens) {   // orange focus ring snapping onto a spot of the bed
     const y = c.bedTop + 16 + s.lens.pos * (c.bedBot - c.bedTop - 32), k = SP.pop(s.lens.k);
     c.ring.setAttribute('cx', c.cx); c.ring.setAttribute('cy', y); c.ring.setAttribute('r', Math.max(0, (c.w * .62) * k)); op(c.ring, s.lens.k > 0 ? 1 : 0);
   } else op(c.ring, 0);
@@ -195,8 +195,80 @@ function setVessel(v, s = {}) {
   op(v.liq, lvl > 0 ? (s.o ?? .85) : 0);
 }
 
+// Hot plate under a vessel, origin at the centre of its top surface. setHot(hp, k 0..1 = coil glow)
+function hotPlate(parent, o = {}) {
+  const g = el('g', {}, parent), w = o.w ?? 340, hp = { g };
+  el('rect', { x: -w / 2, y: 0, width: w, height: 60, rx: 10, fill: '#5B676C' }, g);
+  hp.top = el('rect', { x: -w / 2 + 14, y: -8, width: w - 28, height: 12, rx: 6, fill: '#3B4448' }, g);
+  hp.knob = el('circle', { cx: w / 2 - 40, cy: 32, r: 12, fill: '#D9DEDC' }, g);
+  hp.led = el('circle', { cx: -w / 2 + 34, cy: 32, r: 7, fill: '#8A9599' }, g);
+  return hp;
+}
+function setHot(hp, k) { k = clamp(k); hp.top.setAttribute('fill', mixCol('#3B4448', '#E8552F', k)); hp.led.setAttribute('fill', k > .05 ? '#FF6A3D' : '#8A9599'); }
+
+// Steam wisps above a vessel mouth at (0, 0). runSteam(st, lt, k 0..1)
+function steam(parent, n = 3) {
+  const g = el('g', {}, parent);
+  return { g, p: [...Array(n)].map((_, i) => el('path', { d: `M${(i - 1) * 40} 0 C${(i - 1) * 40 - 20} -40 ${(i - 1) * 40 + 20} -80 ${(i - 1) * 40} -120`,
+    fill: 'none', stroke: '#C9D3CF', 'stroke-width': 8, 'stroke-linecap': 'round' }, g)) };
+}
+function runSteam(st, lt, k) { st.p.forEach((p, i) => { const ph = ((lt * .8 + i * .33) % 1);
+  p.setAttribute('transform', `translate(0 ${-ph * 50}) scale(${1 + ph * .3})`); op(p, clamp(k) * Math.sin(ph * Math.PI) * .9); }); }
+
+// Crystals: n hexagonal prisms scattered in a box (x0, y0, x1, y1), each growing in turn.
+// setCrystals(cr, k 0..1 overall growth, { col, size, dirty: 0..1 share with a trapped impurity dot })
+function crystals(parent, n, box, o = {}) {
+  const g = el('g', {}, parent), r = rnd(o.seed ?? 3), cr = { g, list: [] };
+  for (let i = 0; i < n; i++) {
+    const c = { x: lerp(box[0], box[2], r()), y: lerp(box[1], box[3], r()), rot: r() * 60, s: .7 + r() * .6, d: r(), at: r() * .7, e: el('g', {}, g) };
+    c.poly = el('polygon', { points: [...Array(6)].map((_, j) => polar(0, 0, 1, j * 60).map(v => v.toFixed(3)).join(',')).join(' '),
+      fill: o.col || '#FFFFFF', stroke: '#9FB3C8', 'stroke-width': .12 }, c.e);
+    c.dot = el('circle', { r: .28, fill: C.c4, opacity: 0 }, c.e);
+    cr.list.push(c);
+  }
+  return cr;
+}
+function setCrystals(cr, k, o = {}) {
+  const size = o.size ?? 22;
+  cr.list.forEach(c => { const kk = SP.heavy((k - c.at) * 3.3), sc = size * c.s * clamp(kk, 0, 1.2);
+    c.e.setAttribute('transform', `translate(${c.x} ${c.y}) rotate(${c.rot}) scale(${Math.max(.001, sc)})`); op(c.e, kk > .02 ? 1 : 0);
+    if (o.col) c.poly.setAttribute('fill', o.col); op(c.dot, c.d < (o.dirty ?? 0) ? 1 : 0); });
+}
+
+// A powder heap on a vessel floor at (0, 0): setHeap(h, k 0..1 amount left, col)
+function heap(parent, w = 180) { const g = el('g', {}, parent); return { g, w, p: el('path', {}, g) }; }
+function setHeap(h, k, col) { const w = h.w * Math.sqrt(clamp(k)), ht = 50 * clamp(k);
+  h.p.setAttribute('d', `M${-w / 2} 0 Q${-w / 4} ${-ht} 0 ${-ht} Q${w / 4} ${-ht} ${w / 2} 0 Z`); h.p.setAttribute('fill', col); op(h.g, k > .01 ? 1 : 0); }
+
+// Line plot of a schematic curve f(u), u 0..1 → 0..1. o: x, y (top-left), w, h, xLabel, yLabel.
+// setCurve(cv, k) draws it to u = k; cvXY(cv, u) → point on the curve (for markers and brackets).
+function curvePlot(parent, f, o = {}) {
+  const x = o.x ?? 0, y = o.y ?? 0, w = o.w ?? 500, h = o.h ?? 400, g = el('g', {}, parent), cv = { g, f, x, y, w, h };
+  el('path', { d: `M${x} ${y} L${x} ${y + h} L${x + w} ${y + h}`, fill: 'none', stroke: C.paper, 'stroke-width': 4 }, g);
+  if (o.yLabel) txt(g, o.yLabel, x + 14, y + 10, { size: 28, weight: 700 });
+  if (o.xLabel) txt(g, o.xLabel, x + w, y + h + 44, { size: 28, weight: 700, anchor: 'end' });
+  cv.line = el('path', { fill: 'none', stroke: C.a, 'stroke-width': 6, 'stroke-linecap': 'round' }, g);
+  return cv;
+}
+const cvXY = (cv, u) => [cv.x + u * cv.w, cv.y + cv.h - cv.f(u) * cv.h];
+function setCurve(cv, k) { let d = ''; for (let i = 0; i <= 80 * clamp(k); i++) { const [px, py] = cvXY(cv, i / 80); d += (i ? 'L' : 'M') + px.toFixed(1) + ' ' + py.toFixed(1); }
+  cv.line.setAttribute('d', d || 'M0 0'); op(cv.line, k > 0 ? 1 : 0); }
+
+// Conical filter funnel with filter paper, origin at the stem tip. setFilter(ff, { cake: 0..1 crystals on the paper, col })
+function filterFunnel(parent, o = {}) {
+  const g = el('g', {}, parent), ff = { g }, w = o.w ?? 240, h = o.h ?? 190;
+  el('path', { d: `M${-w / 2 + 14} ${-h - 70} L-6 -70 L6 -70 L${w / 2 - 14} ${-h - 70} Z`, fill: '#FAFBF8' }, g);   // paper
+  ff.cake = crystals(g, 14, [-w / 2 + 75, -h - 55, w / 2 - 75, -h + 10], { seed: o.seed ?? 8 });   // the wide upper part of the cone
+  el('path', { d: `M${-w / 2} ${-h - 70} L-10 -70 L-10 0 M${w / 2} ${-h - 70} L10 -70 L10 0`, fill: 'none', stroke: C.paper, 'stroke-width': 5, 'stroke-linejoin': 'round' }, g);
+  ff.drip = el('ellipse', { cx: 0, cy: 10, rx: 6, ry: 8, fill: '#F2E3A0', opacity: 0 }, g);
+  return ff;
+}
+function setFilter(ff, s = {}) { setCrystals(ff.cake, s.cake ?? 0, { size: 16 });
+  const k = s.drip ?? -1; op(ff.drip, k >= 0 && k < 1 ? 1 : 0); ff.drip.setAttribute('cy', 10 + clamp(k) * 60); if (s.col) ff.drip.setAttribute('fill', s.col); }
+
 // Separatory funnel: two liquid layers, origin at the stopcock region. setFunnel(f, { x, y, s, o, top: col, bottom: col, split: 0..1 interface height, fill: 0..1,
-// mix: 0..1 (1 = emulsion: one blended colour), tilt: degrees (shaking), drain: 0..1 lowers the bottom layer })
+// mix: 0..1 (1 = emulsion: one blended colour), tilt: degrees (shaking), drain: 0..1 runs the lower layer out of the tap,
+// pour: 0..1 empties the upper layer out of the top })
 function sepFunnel(parent, o = {}) {
   const g = el('g', {}, parent), f = { g }, id = uid('fclip');
   const body = 'M-30 -330 L-30 -300 C-150 -230 -150 -40 -16 40 L-10 140 L10 140 L16 40 C150 -40 150 -230 30 -300 L30 -330';
@@ -209,8 +281,10 @@ function sepFunnel(parent, o = {}) {
   return f;
 }
 function setFunnel(f, s = {}) {
-  const yTop = -300 + 290 * (1 - clamp(s.fill ?? 1)), yBot = 140, H = yBot - yTop;
-  const yInt = yBot - H * clamp(s.split ?? .5) * (1 - clamp(s.drain ?? 0));
+  // the liquid drains from the bottom: the lower layer shrinks and the upper layer sinks with it
+  const yTop0 = -300 + 290 * (1 - clamp(s.fill ?? 1)), yBot = 140, H = yBot - yTop0;
+  const hLo = H * clamp(s.split ?? .5) * (1 - clamp(s.drain ?? 0)), hHi = H * (1 - clamp(s.split ?? .5)) * (1 - clamp(s.pour ?? 0));
+  const yInt = yBot - hLo, yTop = yInt - hHi;
   const mix = clamp(s.mix ?? 0);
   const hiCol = mix > 0 ? mixCol(s.top, s.bottom, mix * .5) : s.top, loCol = mix > 0 ? mixCol(s.bottom, s.top, mix * .5) : s.bottom;
   f.hi.setAttribute('y', yTop); f.hi.setAttribute('height', Math.max(0, yInt - yTop + 2)); f.hi.setAttribute('fill', hiCol);
@@ -443,6 +517,17 @@ function ratioSlider(parent, label, o = {}) {
 }
 function setRatio(rs, k, text) { const w = rs.w * clamp(k); rs.fill.setAttribute('width', Math.max(18, w)); rs.knob.setAttribute('cx', rs.x + w); if (rs.val.textContent !== text) rs.val.textContent = text; }
 
+// Meter bar: label above, a track, a fill and the value at the right end. setMeter(m, k 0..1, '80%')
+function meterBar(parent, label, col, o = {}) {
+  const g = el('g', {}, parent), w = o.w ?? 360, h = o.h ?? 34, m = { g, w, h };
+  if (label) txt(g, label, 0, -16, { size: o.size || 28, weight: 700 });
+  el('rect', { x: 0, y: 0, width: w, height: h, rx: h / 2, fill: '#DDE5E2' }, g);
+  m.fill = el('rect', { x: 0, y: 0, height: h, rx: h / 2, fill: col }, g);
+  m.val = txt(g, '', w + 16, h * .5 + 12, { size: o.valSize || 34, weight: 900, fill: col });
+  return m;
+}
+function setMeter(m, k, text) { m.fill.setAttribute('width', Math.max(0, m.w * clamp(k))); if (m.val.textContent !== text) m.val.textContent = text; }
+
 // Legend row: [[col, '石油醚 PE'], ...]
 function legend(parent, items, o = {}) {
   const g = el('g', {}, parent); let x = 0;
@@ -543,6 +628,17 @@ CHEM.coverArt = {
     ['20:1', '5:1', '1:1'].forEach((lab, i) => { const p = tlc(g, { x: (L ? 40 : 120) + i * 290, y: L ? 260 : 300, w: 200, h: 560, label: lab });
       setTLC(p, { front: 1, spots: [{ col: C.a, rf: [.2, .55, .9][i] }, { col: C.b, rf: [.06, .28, .8][i] }] }); });
   },
-  funnel(g, L) { const f = sepFunnel(g); setFunnel(f, { x: L ? 300 : 500, y: L ? 600 : 700, s: L ? 1.4 : 1.8, top: '#F3D27A', bottom: C.solvent, split: .45 }); },
+  funnel(g, L) {
+    const f = sepFunnel(g); setFunnel(f, { x: L ? 300 : 500, y: L ? 600 : 700, s: L ? 1.4 : 1.8, top: '#F3D27A', bottom: C.solvent, split: .45 });
+    const a = mol(g, { col: C.a, r: 66, seed: 1 }), b = mol(g, { col: C.a, r: 44, seed: 2 });
+    poseMol(a, 0, L ? 560 : 830, L ? 330 : 380, { idle: false, look: [-1, 0] }); poseMol(b, 0, L ? 80 : 170, L ? 520 : 600, { idle: false, look: [1, -1] });
+  },
+  crystals(g, L) {
+    // art-local coordinates (the cover scales and places this group): keep the portrait art within y < 1000
+    const hp = hotPlate(g, { w: 420 }); setT(hp.g, L ? 330 : 500, L ? 820 : 760); setHot(hp, 0);
+    const v = vessel(g, 'beaker', { w: 340, h: 360 }); setT(v.g, L ? 330 : 500, L ? 812 : 752); setVessel(v, { level: .55, col: '#F4EBC4' });
+    const cr = crystals(g, 16, L ? [190, 690, 470, 790] : [360, 630, 640, 730], { seed: 4 }); setCrystals(cr, 1, { size: 26 });
+    const a = mol(g, { col: C.a, r: 60, seed: 1 }); poseMol(a, 0, L ? 620 : 830, L ? 470 : 380, { idle: false, look: [-1, 1] });
+  },
   flask(g, L) { const v = vessel(g, 'flask', { w: 300, h: 420 }); setT(v.g, L ? 300 : 540, L ? 860 : 1060, L ? 1.3 : 1.6); setVessel(v, { level: .45, col: '#F3B5C8' }); },
 };

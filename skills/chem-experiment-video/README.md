@@ -1,6 +1,6 @@
 # chem-experiment-video
 
-把一个化学实验讲成「原理 + 操作」的竖屏动画讲解短片（9:16，1.5–2.5 分钟）：浅色扁平矢量风格；宏观仪器和微观分子之间用「一尺镜」推拉切换；拟人的分子角色把机理演出来（氢键 = 握手、保留时间 = 赛跑计时）；一次只改一个变量；最后落到实验台上能用的规则，用选择题和三点小结收尾。带中文配音、烧录字幕和合成配乐。
+把一个化学实验讲成「原理 + 操作」的竖屏动画讲解短片（9:16，1.5–2.5 分钟）：浅色扁平矢量风格；机理在分子层面时，在宏观仪器和微观分子之间推拉切换；拟人的分子角色把机理演出来（氢键 = 握手、保留时间 = 赛跑计时）；一次只改一个变量；最后落到实验台上能用的规则，用选择题和三点小结收尾。带中文配音、烧录字幕和合成配乐。
 
 做法来自对一条无配音竖屏化学片（「过柱子：为什么能分开？」）的逐镜头拆解：保留它的叙事骨架和视觉语言，补上它的缺点（没有配音、字幕被平台界面挡住、节奏不均、示意没有标注、没有安全提示、TLC 一处说法有误）。
 
@@ -22,8 +22,8 @@
 
 ```
 SKILL.md                  入口：原则、流程、迭代
-assets/template/          index.html（浅色外框、一尺镜标尺、转场、字幕）、lib.js、chem.js（化学组件库）、scenes.js
-assets/examples/column-chromatography/   验证片的 script.json、reading.md、brief.md、scenes.js
+assets/template/          index.html（浅色外框、比例尺、转场、字幕）、lib.js、chem.js（化学组件库）、scenes.js
+assets/examples/         三条验证片（柱层析、萃取、重结晶）的 script.json、script.md、reading.md、brief.md、scenes.js
 scripts/                  new_project.sh、tts.py、lint.py、check.py
 references/               narrative.md、style.md、components.md、science.md、review.md
 evals/evals.json          测试题
@@ -31,4 +31,4 @@ evals/evals.json          测试题
 
 ## 验证
 
-`assets/examples/column-chromatography/` 是用本技能从头做出的验证片（151 秒，13 个场景），制作过程中发现并修进技能的问题见 `SKILL.md`（测验拆成两个场景、时间戳重试、`none` 转场、字幕折行）。
+`assets/examples/` 里是用本技能从头做出的三条验证片：`column-chromatography/`（柱层析，151 秒，13 个场景）、`extraction/`（萃取，132 秒，12 个场景）和 `recrystallization/`（重结晶，130 秒，12 个场景）。制作过程中发现并修进技能的问题见 `SKILL.md`（测验拆成两个场景、时间戳重试、`none` 转场、字幕折行）。

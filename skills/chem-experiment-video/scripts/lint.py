@@ -10,7 +10,6 @@ PROBLEM (exit 1):
 - schematic material (scene "schematic": true, or invented numbers) but "endnote" does not say 示意
 - reading.md missing or without a 事实表 section
 WARNING:
-- no `role: dive` scene (no trip into the molecular scale — fine for a pure-procedure film, say why in brief.md)
 - a stretch of more than 30 s between scenes with "pull" (ask / reveal / twist) after the hook
 - max_chars over 16 (portrait subtitles wrap into two rows too often)
 """
@@ -54,7 +53,6 @@ def main():
         i = scenes.index(qz[0])
         if i + 1 >= len(scenes) or scenes[i + 1].get("role") != "answer": P.append("the quiz scene must be followed by a role: answer scene (reveal + explanation)")
     if roles[-1] != "takeaways": P.append("last scene must be role: takeaways (three points + next episode)")
-    if "dive" not in roles: Wn.append("no role: dive scene — the film never shows the molecular scale")
     text = "".join(spoken(s) + "".join(b for _, b in s.get("lines", [])) for s in scenes)
     hz = sorted(k for k in HAZARD if k in text and text.count(k) > sum(text.count(w) for w in INSIDE.get(k, [])))
     if hz and not sc.get("safety"):
