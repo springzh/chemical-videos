@@ -1,0 +1,217 @@
+<!doctype html><html><head><meta charset="utf-8"><title>chem experiment video</title>
+<style>
+@font-face{font-family:ProjSerif;font-weight:200 900;src:url(fonts/NotoSerifSC.ttf)}
+@font-face{font-family:ProjSans;font-weight:100 900;src:url(fonts/NotoSansSC.ttf)}
+html,body{--sans:ProjSans,'PingFang SC','Noto Sans CJK SC','Source Han Sans SC','Microsoft YaHei',sans-serif;margin:0;overflow:hidden;background:var(--bg)}
+#app{position:absolute;left:0;top:0;overflow:hidden;transform-origin:0 0;background:radial-gradient(90% 60% at 50% 40%,#FBFDFC 0%,var(--bg) 70%)}
+.layer{position:absolute;inset:0}
+.scene{position:absolute;inset:0;transform-origin:50% 40%}
+.stage{position:absolute;overflow:visible}
+#cover{position:absolute;inset:0;overflow:hidden;background:var(--bg)}
+#chrome{position:absolute;inset:0;pointer-events:none}
+.kick{position:absolute;font:700 26px var(--sans);color:var(--paper);display:flex;align-items:center;gap:12px}
+.kick i{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--accent)}
+.head{position:absolute;font-family:var(--sans);color:var(--paper)}
+.head .zh{font-weight:900;line-height:1.1;white-space:nowrap}
+.head .en{font-weight:400;color:var(--dim);margin-top:10px;white-space:nowrap}
+.head span{display:inline-block}
+#prog{position:absolute;height:5px;background:rgba(31,42,48,.08)}
+#progF{position:absolute;left:0;top:0;height:5px;background:var(--accent)}
+#subs{position:absolute;text-align:center;font-family:var(--sans);font-weight:700;color:var(--paper)}
+#subs .box{display:inline-block;background:rgba(255,255,255,.88);border-radius:18px;padding:10px 26px;box-shadow:0 6px 24px rgba(31,42,48,.10)}
+#subs .row{display:block;white-space:nowrap}
+</style></head><body>
+<!-- shared SVG defs: every stage svg can reference these ids -->
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="chemShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#1F2A30" flood-opacity=".14"/></filter>
+  <filter id="chemSoft" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="3.5"/></filter>
+  <filter id="chemBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+  <pattern id="chemDots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="7" cy="7" r="2.2" fill="#C9D3CF"/></pattern>
+  <pattern id="chemGrid" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1.8" fill="#D3DDD9"/></pattern>
+  <radialGradient id="chemGloss" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient>
+</defs></svg>
+<div id="app">
+  <svg id="bggrid" class="layer"></svg>
+  <div id="scenes" class="layer"></div>
+  <div id="chrome"></div>
+  <svg id="hud" class="layer"></svg>
+  <div id="subs"></div>
+  <div id="cover"></div>
+</div>
+<script src="timeline.js"></script>
+<script src="lib.js"></script>
+<script src="chem.js"></script>
+<script>// ?s=previews/plan-a.js swaps in a plan preview's scenes
+document.write(`<script src="${new URLSearchParams(location.search).get('s') || 'scenes.js'}"><\/script>`);</script>
+<script>
+// Frame = f(t). Scenes live in scenes.js (SCENE_DEFS[id] with build(g), update(lt, E, beat) and optional
+// en / scale / enter / full); this file is the shared chrome: cover, transitions, scene heading (zh + en),
+// the "一尺镜" scale ruler, progress bar and subtitles. Light lab style; layout in LAY (keep in sync with
+// scripts/check.py STAGE).
+window.ready = false;
+const Q = new URLSearchParams(location.search), O = Q.get('o') === 'land' ? 'land' : 'port', Z = +(Q.get('z') || 1);
+const W = O === 'land' ? 1920 : 1080, H = O === 'land' ? 1080 : 1920, M = TL.meta, CV = M.cover || {};
+for (const k in C) document.documentElement.style.setProperty('--' + k, C[k]);
+// Stage = 1000×1000 scene coordinates placed at (x, y) with scale s. Portrait keeps the bottom 25 % free for the
+// platform's own UI (caption, avatar, buttons): nothing important below y = 1440.
+const LAY = O === 'land' ? {
+  stage: { x: 600, y: 60, s: .9 }, head: { x: 80, y: 190, w: 470, zh: 60, en: 26 }, kick: [80, 72],
+  sub: { cx: 1050, y: 972, size: 40 }, ruler: [1300, 905], prog: [0, 0, 1920],
+} : {
+  stage: { x: 40, y: 330, s: 1 }, head: { x: 64, y: 140, w: 952, zh: 68, en: 28 }, kick: [64, 70],
+  sub: { cx: 540, y: 1352, size: 44 }, ruler: [830, 1262], prog: [0, 0, 1080],
+};
+const app = $('#app'); Object.assign(app.style, { width: W + 'px', height: H + 'px', transform: `scale(${Z})` });
+Object.assign(document.body.style, { width: W * Z + 'px', height: H * Z + 'px' });
+const BEAT = TL.beat, SC = TL.scenes.filter(s => s.id !== 'cover'), COVER_END = TL.scenes[0].end;
+const bgg = $('#bggrid'); bgg.setAttribute('width', W); bgg.setAttribute('height', H);
+el('rect', { width: W, height: H, fill: 'url(#chemGrid)' }, bgg);
+
+// ---------- cover (frame 0 = the thumbnail platforms show) ----------
+// cover: lines (big hook, one item per line), subtitle, kicker (series · episode), art: 'column' | 'tlc' | 'funnel' | 'flask' | none
+function buildCover() {
+  const cv = $('#cover'), L = O === 'land';
+  const svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` }); cv.appendChild(svg);
+  el('rect', { width: W, height: H, fill: 'url(#chemGrid)' }, svg);
+  const lines = CV.lines || [M.title || ''];
+  const ts = L ? Math.min(120, 980 / Math.max(...lines.map(s => s.length))) : Math.min(150, 900 / Math.max(...lines.map(s => s.length)));
+  const tx0 = L ? 110 : 540, anchor = L ? 'start' : 'middle', ty = L ? 330 : 300;
+  if (CV.kicker) { const k = pill(svg, CV.kicker, C.paper, { size: 30, bg: C.bg2 }); setT(k, L ? 110 + k._w / 2 : 540, ty - ts * .88 - 56); }   // above the cap height of line 1
+  lines.forEach((s, i) => T(svg, s, tx0, ty + i * ts * 1.15, { size: ts, weight: 900, anchor, fill: i === lines.length - 1 && lines.length > 1 ? C.accentHi : C.paper }));
+  const y0 = ty + (lines.length - 1) * ts * 1.15 + ts * .62;
+  if (CV.subtitle) T(svg, CV.subtitle, tx0, y0 + 20, { size: L ? 40 : 44, weight: 600, anchor, fill: C.dim });
+  if (CV.en) T(svg, CV.en, tx0, y0 + (L ? 75 : 85), { size: 28, weight: 400, anchor, fill: C.dim });
+  const art = el('g', {}, svg);
+  if (CV.art && CHEM.coverArt[CV.art]) CHEM.coverArt[CV.art](art, L);
+  if (L) setT(art, 1180, 40, .95); else setT(art, 100, 620, .78);   // portrait: keep the art above y 1440 (platform UI)
+}
+
+// ---------- scenes ----------
+window.FALLBACK = [];
+const scenes = SC.map((sc, i) => {
+  let def = SCENE_DEFS[sc.id];
+  if (!def) { def = SCENE_DEFS._cues; window.FALLBACK.push(sc.id); }
+  const lay = LAY.stage, full = !!(def.full ?? sc.full);
+  const div = document.createElement('div'); div.className = 'scene'; $('#scenes').appendChild(div);
+  const svg = el('svg', { class: 'stage', viewBox: '0 0 1000 1000', width: 1000 * lay.s, height: 1000 * lay.s }, div);
+  svg.style.left = lay.x + 'px'; svg.style.top = lay.y + 'px';
+  const obj = Object.create(def);
+  Object.assign(obj, { sc, div, cam: el('g', {}, svg), lay, full, i, anchor: [lay.x + 500 * lay.s, lay.y + 500 * lay.s] });
+  obj._own = { sc: obj.sc, div, cam: obj.cam, lay, full, i, anchor: obj.anchor };
+  return obj;
+});
+const sceneAt = t => SC.reduce((a, s, i) => t >= s.start ? i : a, 0);
+// cue name or number → scene time
+const atOf = (s, a) => typeof a === 'number' ? a : (a in s.sc.ev ? s.sc.ev[a] - s.sc.start : (() => { throw new Error(`scene ${s.sc.id}: no cue "${a}"`); })());
+
+// ---------- heading, kicker, ruler, progress ----------
+const chrome = $('#chrome');
+if (M.brand) chrome.innerHTML = `<div class="kick" style="left:${LAY.kick[0]}px;top:${LAY.kick[1]}px"><i></i>${M.brand}</div>`;
+const hb = LAY.head;
+const heads = scenes.map(s => {
+  const zh = s.sc.title || '', en = s.en || '';
+  if (s.full || !zh) return null;
+  const box = document.createElement('div'); box.className = 'head';
+  Object.assign(box.style, { left: hb.x + 'px', top: hb.y + 'px', width: hb.w + 'px' });
+  const zs = Math.min(hb.zh, Math.floor(hb.w / (zh.length * 1.02)));
+  box.innerHTML = `<div class="zh" style="font-size:${zs}px">${[...zh].map(c => `<span>${c}</span>`).join('')}</div>` +
+    (en ? `<div class="en" style="font-size:${hb.en}px">${en}</div>` : '');
+  chrome.appendChild(box);
+  return { box, s, spans: [...box.querySelectorAll('.zh span')], en: box.querySelector('.en') };
+});
+// "一尺镜" scale ruler: a scene's `scale` is a label ('1 cm') or a list [[at, label], ...] with at = scene seconds or a cue
+const hud = $('#hud'); hud.setAttribute('width', W); hud.setAttribute('height', H);
+const ru = el('g', {}, hud);
+el('line', { x1: 0, y1: 0, x2: 150, y2: 0, stroke: C.paper, 'stroke-width': 3 }, ru);
+for (let k = 0; k <= 10; k++) el('line', { x1: k * 15, y1: 0, x2: k * 15, y2: k % 5 ? -10 : -18, stroke: C.paper, 'stroke-width': 2 }, ru);
+const ruL = T(ru, '', 150, 46, { size: 40, weight: 800, anchor: 'end' });
+const ruS = T(ru, '一尺镜', 150, 80, { size: 22, weight: 500, anchor: 'end', fill: C.dim });
+ruS.setAttribute('font-size', 22);   // below MIN_FONT on purpose: a tiny caption under the reading
+function scaleAt(s, lt) {
+  const sp = s.scale; if (!sp) return null;
+  if (typeof sp === 'string') return { label: sp, since: lt + 9 };
+  let cur = null, since = 9;
+  for (const [a, label] of sp) { const at = atOf(s, a); if (lt >= at) { cur = label; since = lt - at; } }
+  return cur ? { label: cur, since } : { label: sp[0][1], since: 9 };
+}
+const prog = document.createElement('div'); prog.id = 'prog';
+Object.assign(prog.style, { left: LAY.prog[0] + 'px', top: LAY.prog[1] + 'px', width: LAY.prog[2] + 'px' });
+prog.innerHTML = '<div id="progF"></div>'; chrome.appendChild(prog);
+const subs = $('#subs');
+
+window.render = function (t) {
+  const cv = $('#cover'), ce = clamp((t - (COVER_END - .25)) / .45);
+  cv.style.display = t < COVER_END + .3 ? 'block' : 'none';
+  cv.style.opacity = 1 - ease(ce); cv.style.transform = `scale(${1 + ease(ce) * .08})`;
+  const ci = sceneAt(t);
+  scenes.forEach((s, i) => {
+    const sc = s.sc, st = sc.start, en = sc.end, nxt = scenes[i + 1];
+    const vis = t >= st - .3 && t < en + .5 && !(nxt && nxt.enter === 'none' && t >= en) && !(s.enter === 'none' && t < st);
+    s.div.style.display = vis ? 'block' : 'none';
+    if (!vis) return;
+    const lt = t - st;
+    const E = k => { if (!(k in sc.ev)) throw new Error(`scene ${sc.id}: no cue "${k}" (cues: ${Object.keys(sc.ev).join(', ')})`); return sc.ev[k] - st; };
+    s.update(lt, E, BEAT);
+    if (!s.still) s.cam.setAttribute('transform', `translate(500 500) scale(${1 + lt * .0015}) translate(-500 -500)`);
+    // enter: 'fade' (default) rises in; 'zoomIn' grows out of the centre with blur (diving into the lens);
+    // 'zoomOut' shrinks in from oversize (pulling back out); 'none' = hard cut, for a scene that continues the
+    // previous one's picture (same track, same characters). Leaving: fade under the next scene.
+    let tf = '', o = 1, filt = 'none';
+    const k = clamp((lt + .3) / .6), kind = s.enter || 'fade';
+    if (i > 0 && k < 1 && kind !== 'none') {
+      const e = easeOut(k);
+      if (kind === 'zoomIn') { tf = `scale(${lerp(.25, 1, e)})`; filt = `blur(${(1 - e) * 14}px)`; o = clamp(k * 2); }
+      else if (kind === 'zoomOut') { tf = `scale(${lerp(2.4, 1, e)})`; filt = `blur(${(1 - e) * 14}px)`; o = clamp(k * 2); }
+      else { tf = `translateY(${(1 - e) * 50}px)`; o = clamp(k * 1.6); }
+    }
+    if (nxt && t > en - .2 && nxt.enter !== 'none') {
+      const q = ease(clamp((t - en + .2) / .5)), nk = nxt.enter || 'fade';
+      if (nk === 'zoomIn') { tf += ` scale(${1 + q * 2.2})`; filt = `blur(${q * 14}px)`; }
+      else if (nk === 'zoomOut') { tf += ` scale(${1 - q * .6})`; filt = `blur(${q * 10}px)`; }
+      o *= 1 - q;
+    }
+    s.div.style.transform = tf; s.div.style.opacity = o; s.div.style.filter = filt;
+  });
+  // heading: characters rise in on the downbeat, English line follows, all fade at the end
+  heads.forEach((h, i) => {
+    if (!h) return; const st = h.s.sc.start, en = h.s.sc.end, on = t >= st - .2 && t < en + .2;
+    h.box.style.display = on ? 'block' : 'none'; if (!on) return;
+    const prevSame = i > 0 && heads[i - 1] && heads[i - 1].s.sc.title === h.s.sc.title;   // same heading carries over
+    const nextSame = heads[i + 1] && heads[i + 1].s.sc.title === h.s.sc.title;
+    const outK = nextSame ? 0 : ease(clamp((t - en + .2) / .3));
+    h.spans.forEach((sp, j) => { const kk = prevSame ? 1 : SP.card(t - st + .1 - j * .03);
+      sp.style.transform = `translateY(${(1 - kk) * 60}%)`; sp.style.opacity = clamp(kk * 2) * (1 - outK); });
+    if (h.en) h.en.style.opacity = (prevSame ? 1 : clamp((t - st - .25) / .4)) * (1 - outK);
+  });
+  // ruler
+  const cs = scenes[ci], lt = t - cs.sc.start, sa = t > COVER_END ? scaleAt(cs, lt) : null;
+  if (sa) {
+    if (ruL.textContent !== sa.label) ruL.textContent = sa.label;
+    const p = SP.pop(sa.since);
+    setT(ru, LAY.ruler[0], LAY.ruler[1]); op(ru, clamp((t - cs.sc.start + .2) / .3));
+    ruL.setAttribute('transform', `translate(150 34) scale(${1 + (1 - p) * .35}) translate(-150 -34)`);
+  } else op(ru, 0);
+  $('#progF').style.width = clamp(t / TL.total) * LAY.prog[2] + 'px'; prog.style.opacity = t > COVER_END ? 1 : 0;
+  // subtitles: one cue at a time, on a white rounded box
+  const sb = TL.subs.find(s => t >= s.start && t < s.end);
+  if (sb) {
+    if (subs._cur !== sb) { subs.innerHTML = '<span class="box">' + sb.rows.map(r => `<span class="row">${r}</span>`).join('') + '</span>'; subs._cur = sb; }
+    const kk = SP.snap(t - sb.start), outk = clamp((t - sb.end + .12) / .12);
+    Object.assign(subs.style, { left: LAY.sub.cx - 700 + 'px', width: '1400px', fontSize: LAY.sub.size + 'px', lineHeight: 1.4,
+      top: LAY.sub.y - (sb.rows.length - 1) * LAY.sub.size * 1.4 + 'px' });
+    subs.style.transform = `translateY(${(1 - kk) * 18}px)`; subs.style.opacity = clamp(kk * 1.5) * (1 - outk);
+  } else { subs.style.opacity = 0; subs._cur = null; }
+};
+window.IMG_MISSING = [];
+const loadFont = f => document.fonts.load(f).catch(() => console.warn('font fallback for ' + f));
+loadFont('900 40px ProjSans').then(() => loadFont('400 40px ProjSans')).then(() => document.fonts.ready).then(() => {
+  try {
+    buildCover();
+    scenes.forEach(s => {
+      s.build(s.cam);
+      for (const k in s._own) if (s[k] !== s._own[k]) throw new Error(`scene ${s._own.sc.id}: build() overwrote this.${k} — reserved names: ${Object.keys(s._own).join(', ')}`);
+    });
+    window.render(0); window.ready = true;
+  } catch (e) { window.BUILD_ERROR = String(e && e.stack || e); throw e; }
+});
+</script></body></html>
