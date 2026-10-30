@@ -1,0 +1,33 @@
+# OS / editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# secrets
+.env
+.env.*
+
+# render outputs (projects live outside this repo; never commit films or frames)
+*.mp4
+*.mov
+*.wav
+*.mp3
+build/
+previews/
+qa/
+fonts/
+*.ttf
+*.otf
+
+# test workspaces / generated projects
+*-workspace/
+projects/

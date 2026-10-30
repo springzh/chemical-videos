@@ -1,0 +1,293 @@
+<!doctype html><html><head><meta charset="utf-8"><title>article video</title>
+<style>
+@font-face{font-family:ProjSerif;font-weight:200 900;src:url(fonts/NotoSerifSC.ttf)}
+@font-face{font-family:ProjSans;font-weight:100 900;src:url(fonts/NotoSansSC.ttf)}
+html,body{--sans:ProjSans,'PingFang SC','Noto Sans CJK SC','Source Han Sans SC','Microsoft YaHei',sans-serif;--serif:ProjSerif,'Songti SC','Noto Serif CJK SC','Source Han Serif SC',serif;margin:0;overflow:hidden;background:var(--bg)}
+#app{position:absolute;left:0;top:0;overflow:hidden;transform-origin:0 0;background:radial-gradient(120% 90% at 60% 45%,var(--bg2) 0%,var(--bg) 60%,#000 160%)}
+.layer{position:absolute;inset:0}
+.scene{position:absolute;inset:0;transform-origin:50% 50%}
+.stage{position:absolute;overflow:visible}
+#cover{position:absolute;inset:0;overflow:hidden;background:var(--bg)}
+#cover>*{position:absolute}
+.cv-t{font-family:var(--serif);font-weight:900;color:var(--paper);text-shadow:0 4px 30px rgba(0,0,0,.6);line-height:1.12}
+.cv-s{font-family:var(--serif);font-weight:800;color:var(--accentHi)}
+.cv-a{font-family:var(--sans);color:var(--paper);opacity:.85}
+.cv-p{font-family:var(--sans);font-weight:600;color:var(--accentHi);border:2px solid var(--accent);border-radius:999px;background:rgba(0,0,0,.45)}
+.cv-n{font-family:var(--sans);color:var(--paper);opacity:.75}
+.cv-k{font-family:var(--sans);font-weight:600;color:var(--paper);letter-spacing:.3em}
+.cv-line{height:1.5px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+#chrome{position:absolute;inset:0;pointer-events:none}
+.kick{position:absolute;font:600 22px var(--sans);color:var(--accent);letter-spacing:8px}
+.chap{position:absolute;overflow:hidden}
+.chap .item{position:absolute;left:0;top:0;white-space:nowrap}
+.chap .num{font:900 1em/1 var(--serif);color:transparent;-webkit-text-stroke:2px var(--accent)}
+.chap .ttl{font:900 1em/1.2 var(--serif);color:var(--paper)}
+.chap span{display:inline-block}
+.toc{position:absolute;font:400 30px var(--sans);color:var(--dim)}
+.toc .r{position:absolute;left:0;padding-left:62px;white-space:nowrap}
+.toc .r b{position:absolute;left:0;font:600 26px var(--serif);line-height:inherit}
+.toc .hl{position:absolute;left:-24px;width:4px;height:34px;background:var(--accent);border-radius:2px}
+#prog{position:absolute;height:3px;background:rgba(255,255,255,.08)}
+#progF{position:absolute;left:0;top:0;height:3px;background:var(--accent)}
+#subs{position:absolute;text-align:center;font-family:var(--sans);font-weight:600;color:var(--paper);text-shadow:0 2px 14px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.9)}
+#subs .row{display:table;margin:0 auto 8px;white-space:nowrap;padding:4px 26px 6px;border-radius:12px;background:rgba(3,16,42,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);text-shadow:0 1px 6px rgba(0,0,0,.7)}
+#glPrev{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#hud,#card{position:absolute;color:var(--paper);font-family:var(--sans);pointer-events:none;border-radius:20px;border:1px solid rgba(140,190,240,.32);background:linear-gradient(160deg,rgba(20,40,72,.72),rgba(6,16,36,.72));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 18px 50px rgba(0,0,0,.4)}
+#hud{width:600px;padding:18px 26px 18px}
+#card{width:470px;padding:22px 28px 20px}
+#card h3{margin:0;font:600 26px var(--sans);letter-spacing:.12em;color:var(--accentHi);display:flex;align-items:center;gap:12px}
+#card h3::before{content:'';width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+#card .r{display:flex;justify-content:space-between;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(140,180,230,.18);font:400 23px var(--sans);color:var(--dim)}
+#card .r b{font-weight:700;color:var(--paper);text-align:right}
+#card .ch{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+#card .ch span{font:500 21px var(--sans);padding:5px 14px;border-radius:999px;border:1.5px solid currentColor;background:rgba(255,255,255,.04)}
+#hud .hl{font:500 24px var(--sans);color:var(--dim);letter-spacing:.04em}
+#hud .hl b{color:var(--accent);font-weight:700;margin-left:10px}
+#hud .num{font:900 92px/1.02 var(--serif);letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+#hud .num i{font:italic 400 44px var(--serif);margin-left:12px;color:var(--accentHi)}
+#hud .bar{height:4px;background:rgba(255,255,255,.12);margin:10px 0 12px;border-radius:2px;overflow:hidden}
+#hud .bar i{display:block;height:100%;background:var(--accent)}
+#hud .sub{font:400 22px var(--sans);color:var(--dim);white-space:nowrap}
+#hud .sl{display:flex;align-items:center;gap:16px;margin-top:14px;font:500 22px var(--sans);color:var(--paper)}
+#hud .tr{position:relative;flex:0 0 220px;height:3px;background:rgba(255,255,255,.2)}
+#hud .tr i{position:absolute;top:-9px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:var(--paper);box-shadow:0 0 12px var(--accent)}
+#hud.bad .num,#hud.bad .hl b{color:#FF7A7A}#hud.bad .bar i{background:#FF7A7A}
+#grain{position:absolute;inset:0;mix-blend-mode:overlay;pointer-events:none}
+#shade{pointer-events:none;background:linear-gradient(90deg,rgba(3,16,42,.82) 0%,rgba(3,16,42,.55) 26%,rgba(3,16,42,0) 44%)}
+#gl{width:100%;height:100%}
+#vign{position:absolute;inset:0;pointer-events:none;background:radial-gradient(110% 80% at 50% 50%,transparent 55%,rgba(0,0,0,.45) 100%)}
+</style></head><body>
+<div id="app">
+  <canvas id="gl" class="layer"></canvas>
+  <canvas id="glPrev"></canvas>
+  <div id="shade" class="layer"></div>
+  <svg id="orn" class="layer"></svg>
+  <div id="scenes" class="layer"></div>
+  <svg id="fx" class="layer"></svg>
+  <div id="chrome"></div>
+  <div id="subs"></div>
+  <div id="hud"><div class="hl"><span class="lab"></span><b class="st"></b></div><div class="num"><span class="v"></span><i class="u"></i></div><div class="bar"><i></i></div><div class="sub"></div><div class="sl"><span class="sll"></span><div class="tr"><i></i></div><span class="slv"></span></div></div>
+  <div id="card"></div>
+  <div id="vign"></div>
+  <div id="cover"></div>
+  <canvas id="grain"></canvas>
+</div>
+<script src="timeline.js"></script>
+<script src="lib.js"></script>
+<script src="vendor/three-bundle.js"></script>
+<script src="world3d.js"></script>
+<script src="model.js"></script>
+<script src="scenes3d.js"></script>
+<script src="hud.js"></script>
+<script>// ?s=previews/plan-a.js swaps in a plan preview's scenes
+document.write(`<script src="${new URLSearchParams(location.search).get('s') || 'scenes.js'}"><\/script>`);</script>
+<script>
+// Frame = f(t). Scenes live in scenes.js (SCENE_DEFS[id] with build(g) and update(lt, E, beat)); this file is
+// the shared chrome: cover, transitions, chapter titles, landscape table of contents, progress bar, subtitles.
+window.ready = false;
+const Q = new URLSearchParams(location.search), O = Q.get('o') === 'land' ? 'land' : 'port', Z = +(Q.get('z') || 1);
+const W = O === 'land' ? 1920 : 1080, H = O === 'land' ? 1080 : 1920, M = TL.meta, CV = M.cover || {};
+for (const k in C) document.documentElement.style.setProperty('--' + k, C[k]);
+// Layout. Stage = 1000×1000 scene coordinates placed at (x, y) with scale s. "chap" = scenes under a chapter
+// heading (landscape: right column beside the TOC), "full" = scenes without one (intro, outro, big moments).
+const LAY = O === 'land' ? {
+  chap: { x: 830, y: 50, s: .86 }, full: { x: 520, y: 40, s: .88 },
+  sub: { cx: 1260, y: 952, size: 42, cxFull: 960 }, kick: [110, 100],
+  chapBox: { x: 104, y: 130, w: 640, h: 320, numS: 170, ttlS: 58, ttlY: 205 }, toc: [110, 470, 300], prog: [0, 1077, 1920],
+} : {
+  chap: { x: 40, y: 380, s: 1 }, full: { x: 40, y: 400, s: 1 },
+  sub: { cx: 540, y: 1520, size: 50, cxFull: 540 }, kick: [70, 110],
+  chapBox: { x: 64, y: 150, w: 960, h: 240, numS: 120, ttlS: 64 }, toc: null, prog: [0, 1917, 1080],
+};
+const app = $('#app'); Object.assign(app.style, { width: W + 'px', height: H + 'px', transform: `scale(${Z})` });
+Object.assign(document.body.style, { width: W * Z + 'px', height: H * Z + 'px' });
+const gr = $('#grain'); gr.width = W; gr.height = H;
+const BEAT = TL.beat, SC = TL.scenes.filter(s => s.id !== 'cover'), CHAPS = SC.filter(s => s.num && s.title);
+const COVER_END = TL.scenes[0].end;
+
+// background ornament: slow rotating ring that brightens on every beat
+const orn = $('#orn'); orn.setAttribute('width', W); orn.setAttribute('height', H);
+const OC = O === 'land' ? [1260, 470] : [540, 980];
+const ornG = el('g', {}, orn);
+[620, 700, 760].forEach((r, i) => el('circle', { r, fill: 'none', stroke: C.accent, 'stroke-width': i === 1 ? 2 : 1, 'stroke-dasharray': ['3 12', '40 14 8 14', '2 18'][i] }, ornG));
+
+// ---------- cover (frame 0 = the thumbnail platforms show) ----------
+function buildCover() {
+  const cv = $('#cover'), L = O === 'land';
+  const px = o => Object.entries(o).map(([k, v]) => `${k}:${typeof v === 'number' ? v + 'px' : v}`).join(';');
+  const mid = (top, size) => px({ left: 0, width: 1080, 'text-align': 'center', top, 'font-size': size });
+  const lines = CV.lines || [M.title || ''];
+  const shade = L ? 'linear-gradient(90deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.5) 38%,rgba(0,0,0,.05) 70%),linear-gradient(0deg,rgba(0,0,0,.55),transparent 40%)'
+    : `linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 22%,transparent 45%,${C.bg}EE 64%,${C.bg} 72%)`;
+  let h = '';
+  if (CV.image) h += `<div style="${L ? px({ left: 0, top: 0, width: 1920, height: 1080 }) : px({ left: 0, top: 0, width: 1080, height: 1250 })};background:url('${CV.image}') center/cover"></div>`;
+  h += `<div style="inset:0;background:${shade}"></div>`;
+  h += `<div style="${L ? px({ left: 30, top: 30, width: 1858, height: 1018 }) : px({ left: 40, top: 40, width: 998, height: 1838 })};border:1.5px solid ${C.accent}88"></div>`;
+  if (CV.logo) h += `<img src="${CV.logo}" style="${L ? px({ left: 120, top: 92, width: 420 }) : px({ left: 270, top: 110, width: 540 })}">`;
+  if (CV.kicker) h += `<div class="cv-k" style="${L ? px({ left: CV.logo ? 580 : 120, top: 140, 'font-size': 30 }) : mid(320, 32)}">${CV.kicker}</div>`;
+  if (CV.credit) h += `<div class="cv-n" style="${L ? px({ right: 70, bottom: 56, 'font-size': 22 }) : px({ right: 70, top: 1005, 'font-size': 22 })}">${CV.credit}</div>`;
+  const ts = L ? Math.min(116, 1500 / Math.max(...lines.map(s => s.length))) : Math.min(128, 900 / Math.max(...lines.map(s => s.length)));
+  const ty = L ? 760 - lines.length * ts * 1.12 - 40 : 1075;
+  h += `<div class="cv-t" style="${L ? px({ left: 112, top: ty, 'font-size': ts }) : mid(ty, ts)}">${lines.join('<br>')}</div>`;
+  const y0 = L ? 760 : ty + lines.length * ts * 1.12 + 30;
+  h += `<div class="cv-line" style="${L ? px({ left: 112, top: y0, width: 640 }) : px({ left: 180, top: y0, width: 720 })}"></div>`;
+  if (CV.subtitle) h += `<div class="cv-s" style="${L ? px({ left: 112, top: y0 + 25, 'font-size': 44 }) : mid(y0 + 25, 48)}">${CV.subtitle}</div>`;
+  if (CV.byline) h += `<div class="cv-a" style="${L ? px({ left: 112, top: y0 + 100, 'font-size': 32 }) : mid(y0 + 110, 32)}">${CV.byline}</div>`;
+  if (CV.tagline) h += `<div style="${L ? px({ left: 112, top: y0 + 170 }) : px({ left: 0, width: 1080, top: y0 + 192, display: 'flex', 'justify-content': 'center' })}"><span class="cv-p" style="${px({ 'font-size': 32, padding: '10px 30px' })}">${CV.tagline}</span></div>`;
+  cv.innerHTML = h;
+}
+
+// ---------- scenes ----------
+window.FALLBACK = [];
+const scenes = SC.map((sc, i) => {
+  let def = SCENE_DEFS[sc.id];
+  if (!def) { def = SCENE_DEFS._cues; window.FALLBACK.push(sc.id); }
+  const full = def.full ?? (sc.full || !sc.num), lay = full ? LAY.full : LAY.chap;
+  const div = document.createElement('div'); div.className = 'scene'; $('#scenes').appendChild(div);
+  const svg = el('svg', { class: 'stage', viewBox: '0 0 1000 1000', width: 1000 * lay.s, height: 1000 * lay.s }, div);
+  svg.style.left = lay.x + 'px'; svg.style.top = lay.y + 'px';
+  const obj = Object.create(def);
+  Object.assign(obj, { sc, div, cam: el('g', {}, svg), lay, full, i, anchor: [lay.x + 500 * lay.s, lay.y + 470 * lay.s] });
+  obj._own = { sc: obj.sc, div, cam: obj.cam, lay, full, i, anchor: obj.anchor };
+  return obj;
+});
+const KINDS = ['iris', 'slash', 'push'];   // transitions rotate; all land on the scene's downbeat
+const fx = $('#fx'); fx.setAttribute('width', W); fx.setAttribute('height', H);
+const fxRing = el('circle', { fill: 'none', stroke: C.accentHi, 'stroke-width': 6, opacity: 0 }, fx);
+const fxBar = el('polygon', { fill: C.accent, opacity: 0 }, fx);
+
+// ---------- chapter heading, TOC, progress ----------
+const chrome = $('#chrome');
+if (M.brand) chrome.innerHTML = `<div class="kick" style="left:${LAY.kick[0]}px;top:${LAY.kick[1]}px">${M.brand}</div>`;
+const cb = LAY.chapBox;
+const chapEls = CHAPS.map(c => {
+  const box = document.createElement('div'); box.className = 'chap';
+  Object.assign(box.style, { left: cb.x + 'px', top: cb.y + 'px', width: cb.w + 'px', height: cb.h + 'px' });
+  const num = document.createElement('div'); num.className = 'item num'; num.style.fontSize = cb.numS + 'px';
+  num.innerHTML = [...c.num].map(ch => `<span>${ch}</span>`).join('');
+  const ttl = document.createElement('div'); ttl.className = 'item ttl';
+  const room = O === 'land' ? cb.w : cb.w - cb.numS * 1.35;
+  ttl.style.fontSize = Math.min(cb.ttlS, Math.floor(room / (c.title.length * 1.02))) + 'px';
+  if (O === 'land') ttl.style.top = cb.ttlY + 'px'; else { ttl.style.left = cb.numS * 1.35 + 'px'; ttl.style.top = cb.numS * .25 + 'px'; }
+  ttl.innerHTML = [...c.title].map(ch => `<span>${ch}</span>`).join('');
+  box.append(num, ttl); chrome.appendChild(box);
+  return { box, c, spans: [...num.children, ...ttl.children] };
+});
+let tocEl = null, tocHl = null, rowH = 52;
+if (LAY.toc && CHAPS.length) {
+  rowH = Math.min(52, LAY.toc[2] / CHAPS.length);
+  tocEl = document.createElement('div'); tocEl.className = 'toc'; tocEl.style.left = LAY.toc[0] + 'px'; tocEl.style.top = LAY.toc[1] + 'px';
+  tocEl.innerHTML = '<div class="hl"></div>' + CHAPS.map((c, i) => `<div class="r" style="top:${i * rowH}px;line-height:${rowH}px"><b>${c.num}</b>${c.title}</div>`).join('');
+  chrome.appendChild(tocEl); tocHl = tocEl.querySelector('.hl');
+}
+const prog = document.createElement('div'); prog.id = 'prog';
+Object.assign(prog.style, { left: LAY.prog[0] + 'px', top: LAY.prog[1] + 'px', width: LAY.prog[2] + 'px' });
+prog.innerHTML = '<div id="progF"></div>'; chrome.appendChild(prog);
+const subs = $('#subs');
+const chapAt = t => CHAPS.reduce((k, c, i) => t >= c.start - .15 ? i : k, -1);
+const sceneAt = t => SC.reduce((a, s, i) => t >= s.start ? i : a, 0);
+
+window.render = function (t) {
+  // cover: still until the last beat, then pushes in and blurs away
+  const cv = $('#cover'), ce = clamp((t - (COVER_END - .3)) / .5);
+  cv.style.display = t < COVER_END + .35 ? 'block' : 'none';
+  cv.style.transform = `scale(${1 + ease(ce) * .35})`; cv.style.opacity = 1 - ease(clamp((t - COVER_END + .15) / .45));
+  cv.style.filter = ce > 0 ? `blur(${ce * 6}px)` : 'none';
+  const pulse = Math.exp(-((t % BEAT) / BEAT) * 5);
+  ornG.setAttribute('transform', `translate(${OC[0]} ${OC[1]}) rotate(${t * 3})`); ornG.setAttribute('opacity', 0);
+  const ci = sceneAt(t);
+  { const s3 = scenes[ci], sc3 = s3.sc, lt3 = t - sc3.start;
+    const E3 = k => { if (!(k in sc3.ev)) throw new Error(`scene ${sc3.id}: no cue "${k}"`); return sc3.ev[k] - sc3.start; };
+    // 3D cross-dissolve: the previous scene keeps running for XF s on a 2D copy that fades out over the new one
+    const XF = .8, gp = $('#glPrev');
+    if (ci > 0 && lt3 < XF && !Q.get('raw')) {
+      const p3 = scenes[ci - 1], ps = p3.sc, Ep = k => ps.ev[k] - ps.start;
+      W3.render(ps.id, t - ps.start, Ep, BEAT, p3.anchor, t);
+      if (gp.width !== W) { gp.width = W; gp.height = H; }
+      const cx = gp.getContext('2d'); cx.clearRect(0, 0, W, H); cx.drawImage($('#gl'), 0, 0, W, H);
+      gp.style.opacity = 1 - ease(lt3 / XF); gp.style.display = 'block';
+    } else gp.style.display = 'none';
+    W3.render(sc3.id, lt3, E3, BEAT, Q.get('ax') ? [+Q.get('ax'), s3.anchor[1]] : s3.anchor, t);
+    HUD.render(sc3.id, lt3, E3, t, s3.full);
+    $('#shade').style.opacity = s3.full ? 0 : 1; }
+  scenes.forEach((s, i) => {
+    const sc = s.sc, st = sc.start, en = sc.end, nxt = scenes[i + 1];
+    const vis = t >= st && t < en + .6 && i === ci;   // overlay only with its own 3D frame (labels read that scene's 3D points)
+    s.div.style.display = vis ? 'block' : 'none';
+    if (!vis) return;
+    const lt = t - st;
+    const E = k => { if (!(k in sc.ev)) throw new Error(`scene ${sc.id}: no cue "${k}" (cues: ${Object.keys(sc.ev).join(', ')})`); return sc.ev[k] - st; };
+    s.update(lt, E, BEAT);
+    // no SVG push-in: labels stay pinned to the 3D camera
+    let tf = '', clip = 'none', filt = 'none';
+    const kind = KINDS[i % 3], k = clamp((t - st + .25) / .7);
+    if (i > 0 && t < st + .45) {
+      const e = easeOut(k), [ax, ay] = s.anchor;
+      if (kind === 'iris') clip = `circle(${e * Math.hypot(W, H)}px at ${ax}px ${ay}px)`;
+      if (kind === 'slash') { const X = -H * .5 + e * (W + H * .9); clip = `polygon(0 0, ${X}px 0, ${X - H * .4}px ${H}px, 0 ${H}px)`; }
+      if (kind === 'push') tf = `translateY(${(1 - SP.card(t - st + .2)) * H * .6}px)`;
+    }
+    if (nxt && t > en - .25) {   // leaving: scale up and darken under the next scene
+      const q = ease(clamp((t - en + .25) / .7)); tf += ` scale(${1 + q * .18})`; filt = `brightness(${1 - q * .7})`;
+      if (KINDS[(i + 1) % 3] === 'push') tf += ` translateY(${-q * H * .25}px)`;
+    }
+    if (i === 0) tf = `scale(${lerp(.6, 1, SP.heavy(t - st + .1))})`;
+    s.div.style.transform = tf; s.div.style.clipPath = clip; s.div.style.filter = filt;
+  });
+  fxRing.setAttribute('opacity', 0); fxBar.setAttribute('opacity', 0);
+  scenes.forEach((s, i) => {
+    if (!i) return; const k = clamp((t - s.sc.start + .25) / .7); if (k <= 0 || k >= 1) return;
+    const e = easeOut(k), kind = KINDS[i % 3];
+    if (kind === 'iris') { fxRing.setAttribute('cx', s.anchor[0]); fxRing.setAttribute('cy', s.anchor[1]); fxRing.setAttribute('r', e * Math.hypot(W, H));
+      fxRing.setAttribute('opacity', 1 - k); fxRing.setAttribute('stroke-width', 18 * (1 - k) + 2); }
+    if (kind === 'slash') { const X = -H * .5 + e * (W + H * .9); fxBar.setAttribute('points', `${X} 0,${X + 26} 0,${X + 26 - H * .4} ${H},${X - H * .4} ${H}`); fxBar.setAttribute('opacity', 1 - k * .6); }
+  });
+  // chapter heading: characters rise in one by one, rise out at the end
+  const ck = chapAt(t);
+  chapEls.forEach(c => {
+    const st = c.c.start, en = c.c.end, on = t >= st - .3 && t < en + .2;
+    c.box.style.display = on ? 'block' : 'none'; if (!on) return;
+    const outK = ease(clamp((t - en + .2) / .3));
+    c.spans.forEach((sp, j) => { const kk = SP.card(t - st + .1 - j * .035);
+      sp.style.transform = `translateY(${(1 - kk) * 120 - outK * 140}%)`; sp.style.opacity = clamp(kk * 2) * (1 - outK); });
+  });
+  if (CHAPS.length) {
+    const cin = SP.card(t - CHAPS[0].start + .1), cout = ease(clamp((t - CHAPS[CHAPS.length - 1].end + .2) / .4));
+    const kick = chrome.querySelector('.kick'); if (kick) kick.style.opacity = clamp(cin) * (1 - cout);
+    if (tocEl) {
+      tocEl.style.opacity = clamp(cin) * (1 - cout); tocEl.style.transform = `translateX(${(1 - cin) * -60}px)`;
+      let y = 0; CHAPS.forEach((c, i) => { if (i) y += rowH * SP.card(t - c.start + .1); });
+      tocHl.style.top = y + (rowH - 34) / 2 + 'px';
+      [...tocEl.querySelectorAll('.r')].forEach((r, i) => { r.style.color = i === ck ? C.paper : C.dim; r.querySelector('b').style.color = i === ck ? C.accent : C.dim; });
+    }
+  }
+  $('#progF').style.width = clamp(t / TL.total) * LAY.prog[2] + 'px'; prog.style.opacity = t > COVER_END ? 1 : 0;
+  // subtitles: snap up, never two on screen at once; in landscape two rows grow upward so the second stays in frame
+  const sb = TL.subs.find(s => t >= s.start && t < s.end);
+  if (sb) {
+    if (subs._cur !== sb) { subs.innerHTML = sb.rows.map(r => `<span class="row">${r}</span>`).join(''); subs._cur = sb; }
+    const k = SP.snap(t - sb.start), outk = clamp((t - sb.end + .12) / .12), cx = scenes[ci].full ? LAY.sub.cxFull : LAY.sub.cx;
+    Object.assign(subs.style, { left: cx - 700 + 'px', width: '1400px', top: LAY.sub.y - (O === 'land' ? (sb.rows.length - 1) * LAY.sub.size * 1.45 : 0) + 'px', fontSize: LAY.sub.size + 'px', lineHeight: 1.45 });
+    subs.style.transform = `translateY(${(1 - k) * 24}px)`; subs.style.opacity = clamp(k * 1.5) * (1 - outk);
+  } else { subs.style.opacity = 0; subs._cur = null; }
+  grain(gr, t, .05);
+};
+window.IMG_MISSING = [];
+const waitImg = src => new Promise(r => { if (!src) return r(); const im = new Image(); im.onload = r; im.onerror = () => { window.IMG_MISSING.push(src); r(); }; im.src = src; });
+// a missing fonts/*.ttf rejects the load; the page then falls back to the system fonts listed in @font-face
+const loadFont = f => document.fonts.load(f).catch(() => console.warn('font fallback for ' + f));
+loadFont('900 40px ProjSerif').then(() => loadFont('500 40px ProjSans')).then(() => document.fonts.ready)
+  .then(() => Promise.all([waitImg(CV.image), waitImg(CV.logo)])).then(() => {
+    try {
+      W3.init($('#gl'), W, H);
+      buildCover();
+      scenes.forEach(s => {
+        s.build(s.cam);
+        // build() storing an element as this.sc / this.div / … would silently hide the scene (no error at all)
+        for (const k in s._own) if (s[k] !== s._own[k]) throw new Error(`scene ${s._own.sc.id}: build() overwrote this.${k} — reserved names: ${Object.keys(s._own).join(', ')}`);
+      });
+      if (Q.get('raw')) ['#scenes', '#chrome', '#subs', '#cover', '#shade', '#fx'].forEach(q => $(q).style.visibility = 'hidden');
+      window.render(0); window.ready = true;
+    } catch (e) { window.BUILD_ERROR = String(e && e.stack || e); throw e; }   // render.py reports it at once
+  });
+</script></body></html>

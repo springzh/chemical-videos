@@ -1,0 +1,30 @@
+# OS / editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# secrets
+.env
+.env.*
+
+# render outputs (projects live outside this repo; never commit films or frames)
+*.mp4
+*.mov
+*.wav
+build/
+previews/
+qa/
+fonts/
+*.ttf
+
+# test workspace lives in ../molecular-video-workspace
+*-workspace/
